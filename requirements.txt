@@ -1,0 +1,14 @@
+numpy
+pandas
+scikit-learn>=1.0.0
+matplotlib
+seaborn
+mlflow>=2.0.0
+python-dotenv
+joblib
+hydra-core
+pytest
+pylint
+black
+flake8
+pre-commit 
