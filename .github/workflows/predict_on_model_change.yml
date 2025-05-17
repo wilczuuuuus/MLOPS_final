@@ -1,0 +1,51 @@
+name: Predict on new data or with new model
+
+on: 
+  push:
+    branches:
+      - main
+    paths:  # predict when the test set has changed, as well as when the model artifact is updated
+      - 'data/processed/test.csv'
+      - 'code_module/train/predict_model.py'
+      - 'models/crop_model_latest.joblib'
+  workflow_dispatch:  # Allows manual triggering from the train workflow
+jobs:
+  predict:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # This gives the token write access to the repository contents
+    steps: 
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with: 
+          python-version: "3.10"
+      - name: Install dependencies
+        run: make requirements
+      - name: Make predictions
+        env:
+          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+          ARTIFACT_BUCKET: ${{ secrets.ARTIFACT_BUCKET }}
+        run: make predict
+      - name: Upload predictions
+        uses: actions/upload-artifact@v4
+        with:
+          name: predictions
+          path: models/predictions.csv
+          
+      - name: Install AWS CLI
+        run: |
+          pip install --upgrade awscli
+
+      - name: Upload predictions to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
+          ARTIFACT_BUCKET: ${{ secrets.ARTIFACT_BUCKET }}
+        run: |
+          aws s3 cp models/predictions.csv s3://$ARTIFACT_BUCKET/predictions/predictions.csv --acl private
