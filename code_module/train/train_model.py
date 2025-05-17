@@ -197,66 +197,11 @@ def main():
     logger.info(f"Using MLflow tracking URI: {tracking_uri}")
     mlflow.set_tracking_uri(tracking_uri)
     
-    # Ensure bucket name is set before any MLflow operations
-    bucket_name = os.environ.get("ARTIFACT_BUCKET", "")
-    if not bucket_name or bucket_name.strip() == "":
-        bucket_name = "mlops-final-task"
-        os.environ["ARTIFACT_BUCKET"] = bucket_name
-    
-    # Set MLflow artifact URI with exactly two slashes after s3:
-    artifact_root = f"s3://{bucket_name}/models"
-    # Set both environment variables to ensure consistency
-    os.environ["MLFLOW_ARTIFACT_ROOT"] = artifact_root
-    os.environ["MLFLOW_S3_ENDPOINT_URL"] = "http://s3.amazonaws.com"
-    
-    logger.info(f"Setting artifact root to: {artifact_root}")
-    logger.info(f"Setting S3 endpoint URL to: http://s3.amazonaws.com")
-    
+    # Set the experiment name
     mlflow.set_experiment("crop-recommendation")
     
-    # Log AWS configuration for debugging
-    logger.info("AWS environment variables:")
-    logger.info(f"AWS_ACCESS_KEY_ID set: {'Yes' if os.environ.get('AWS_ACCESS_KEY_ID') else 'No'}")
-    logger.info(f"AWS_SECRET_ACCESS_KEY set: {'Yes' if os.environ.get('AWS_SECRET_ACCESS_KEY') else 'No'}")
-    logger.info(f"AWS_DEFAULT_REGION set: {'Yes' if os.environ.get('AWS_DEFAULT_REGION') else 'No'}")
-    logger.info(f"ARTIFACT_BUCKET set: {bucket_name}")
-    
-    # Test MLflow artifact URI immediately to verify format
+    # Train and evaluate the model
     try:
-        with mlflow.start_run() as run:
-            logger.info(f"Test run ID: {run.info.run_id}")
-            artifact_uri = mlflow.get_artifact_uri()
-            logger.info(f"Artifact URI: {artifact_uri}")
-            
-            # Verify S3 URI format
-            if artifact_uri.startswith("s3://"):
-                logger.info(f"S3 URI format looks correct with double slashes")
-                from urllib.parse import urlparse
-                parsed_uri = urlparse(artifact_uri)
-                logger.info(f"S3 path components: scheme={parsed_uri.scheme}, netloc={parsed_uri.netloc}, path={parsed_uri.path}")
-            else:
-                logger.warning(f"S3 URI format might be incorrect: {artifact_uri}")
-            
-            # Log a test artifact to verify S3 access
-            test_path = "test_artifact.txt"
-            with open(test_path, "w") as f:
-                f.write("Test artifact to verify S3 access")
-            
-            try:
-                mlflow.log_artifact(test_path)
-                logger.info("Successfully logged test artifact")
-            except Exception as e:
-                logger.error(f"Failed to log test artifact: {e}")
-            
-            mlflow.end_run()
-    except Exception as e:
-        logger.warning(f"Error checking MLflow artifact URI: {e}")
-    
-    # Set up AWS S3 endpoint and perform training
-    try:
-        # Ensure correct S3 endpoint configuration for boto3
-        os.environ["AWS_S3_ENDPOINT"] = "s3.amazonaws.com"
-        
         metrics = train_and_evaluate()
         logger.info("Model training pipeline completed successfully")
         return metrics
