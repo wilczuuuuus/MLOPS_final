@@ -198,6 +198,15 @@ def main():
     mlflow.set_tracking_uri(tracking_uri)
     
     # Check if S3 credentials are available for artifact storage
+    bucket_name = os.environ.get("ARTIFACT_BUCKET", "")
+    logger.info(f"ARTIFACT_BUCKET value: '{bucket_name}'")  # Print actual bucket name for debugging
+    
+    # Explicitly set the bucket name if empty
+    if not bucket_name or bucket_name.strip() == "":
+        bucket_name = "mlops-final-task"
+        os.environ["ARTIFACT_BUCKET"] = bucket_name
+        logger.info(f"ARTIFACT_BUCKET was empty, set to: '{bucket_name}'")
+    
     use_s3 = all([
         os.environ.get("AWS_ACCESS_KEY_ID"),
         os.environ.get("AWS_SECRET_ACCESS_KEY"),
@@ -224,7 +233,16 @@ def main():
     try:
         with mlflow.start_run() as run:
             logger.info(f"Run ID: {run.info.run_id}")
-            logger.info(f"Artifact URI: {mlflow.get_artifact_uri()}")
+            artifact_uri = mlflow.get_artifact_uri()
+            logger.info(f"Artifact URI: {artifact_uri}")
+            
+            # Parse and verify S3 URI
+            if artifact_uri.startswith("s3:"):
+                logger.info(f"S3 URI format looks correct")
+                from urllib.parse import urlparse
+                parsed_uri = urlparse(artifact_uri)
+                logger.info(f"S3 path components: scheme={parsed_uri.scheme}, netloc={parsed_uri.netloc}, path={parsed_uri.path}")
+            
             mlflow.end_run()
     except Exception as e:
         logger.warning(f"Error checking MLflow artifact URI: {e}")
