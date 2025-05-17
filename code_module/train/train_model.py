@@ -22,7 +22,7 @@ def plot_feature_importance(model, feature_names, output_dir):
     Plot feature importance
 
     Args:
-        model: Trained model with feature_importances_ attribute
+        model: Trained model with feature_importances_ attributexx
         feature_names: List of feature names
         output_dir: Directory to save the plot
     """
