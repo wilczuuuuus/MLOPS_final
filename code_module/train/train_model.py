@@ -263,7 +263,7 @@ def main():
         # Set up correct S3 configuration
         if use_s3:
             # Configure boto3 to use the correct S3 endpoint format
-            os.environ["AWS_S3_ENDPOINT"] = f"s3.{os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')}.amazonaws.com"
+            os.environ["AWS_S3_ENDPOINT"] = "s3.amazonaws.com"
         
         metrics = train_and_evaluate()
         logger.info("Model training pipeline completed successfully")
