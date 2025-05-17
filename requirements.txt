@@ -11,4 +11,5 @@ pytest
 pylint
 black
 flake8
-pre-commit 
+pre-commit
+boto3 
