@@ -192,8 +192,10 @@ def main():
     """
     logger.info("Starting model training pipeline")
 
-    # Set MLflow tracking URI (can be updated based on your MLflow setup)
-    mlflow.set_tracking_uri("http://localhost:5000")
+    # Set MLflow tracking URI from environment variable or use default if not set
+    tracking_uri = os.environ.get("MLFLOW_TRACKING_URI", "http://localhost:5000")
+    logger.info(f"Using MLflow tracking URI: {tracking_uri}")
+    mlflow.set_tracking_uri(tracking_uri)
     mlflow.set_experiment("crop-recommendation")
 
     # Train and evaluate the model
