@@ -197,6 +197,16 @@ def main():
     logger.info(f"Using MLflow tracking URI: {tracking_uri}")
     mlflow.set_tracking_uri(tracking_uri)
     
+    # Set default artifact root with correct S3 format (double slashes)
+    bucket_name = os.environ.get("ARTIFACT_BUCKET")
+    if bucket_name:
+        # Explicitly set the artifact URI format to match template repo style
+        artifact_root = f"s3://{bucket_name}/models"
+        os.environ["MLFLOW_ARTIFACT_ROOT"] = artifact_root
+        logger.info(f"Setting artifact root to: {artifact_root}")
+    
+    mlflow.set_experiment("crop-recommendation")
+    
     # Check if S3 credentials are available for artifact storage
     bucket_name = os.environ.get("ARTIFACT_BUCKET", "")
     logger.info(f"ARTIFACT_BUCKET value: '{bucket_name}'")  # Print actual bucket name for debugging
@@ -250,6 +260,11 @@ def main():
 
     # Train and evaluate the model
     try:
+        # Set up correct S3 configuration
+        if use_s3:
+            # Configure boto3 to use the correct S3 endpoint format
+            os.environ["AWS_S3_ENDPOINT"] = f"s3.{os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')}.amazonaws.com"
+        
         metrics = train_and_evaluate()
         logger.info("Model training pipeline completed successfully")
         return metrics
