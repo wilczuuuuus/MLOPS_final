@@ -198,24 +198,24 @@ def main():
     mlflow.set_tracking_uri(tracking_uri)
     
     # Set default artifact root with correct S3 format (double slashes)
-    bucket_name = os.environ.get("ARTIFACT_BUCKET")
-    if bucket_name:
-        # Explicitly set the artifact URI format to match template repo style
-        artifact_root = f"s3://{bucket_name}/models"
-        os.environ["MLFLOW_ARTIFACT_ROOT"] = artifact_root
-        logger.info(f"Setting artifact root to: {artifact_root}")
-    
-    mlflow.set_experiment("crop-recommendation")
-    
-    # Check if S3 credentials are available for artifact storage
     bucket_name = os.environ.get("ARTIFACT_BUCKET", "")
-    logger.info(f"ARTIFACT_BUCKET value: '{bucket_name}'")  # Print actual bucket name for debugging
     
     # Explicitly set the bucket name if empty
     if not bucket_name or bucket_name.strip() == "":
         bucket_name = "mlops-final-task"
         os.environ["ARTIFACT_BUCKET"] = bucket_name
         logger.info(f"ARTIFACT_BUCKET was empty, set to: '{bucket_name}'")
+    
+    # Explicitly set the artifact URI format with double slashes
+    artifact_root = f"s3://{bucket_name}/models"
+    os.environ["MLFLOW_ARTIFACT_ROOT"] = artifact_root
+    logger.info(f"Setting artifact root to: {artifact_root}")
+    
+    mlflow.set_experiment("crop-recommendation")
+    
+    # Check if S3 credentials are available for artifact storage
+    bucket_name = os.environ.get("ARTIFACT_BUCKET", "")
+    logger.info(f"ARTIFACT_BUCKET value: '{bucket_name}'")  # Print actual bucket name for debugging
     
     use_s3 = all([
         os.environ.get("AWS_ACCESS_KEY_ID"),
