@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 def load_data(input_filepath):
     """
-    Load the crop recommendation dataset from the specified file path.
+    Load the crop recommendation dataset from the specified file pathx
 
     Args:
         input_filepath: Path to the raw data file

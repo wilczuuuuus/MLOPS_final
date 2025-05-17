@@ -196,14 +196,48 @@ def main():
     tracking_uri = os.environ.get("MLFLOW_TRACKING_URI", "http://localhost:5000")
     logger.info(f"Using MLflow tracking URI: {tracking_uri}")
     mlflow.set_tracking_uri(tracking_uri)
-    mlflow.set_experiment("crop-recommendation")
+    
+    # Check if S3 credentials are available for artifact storage
+    use_s3 = all([
+        os.environ.get("AWS_ACCESS_KEY_ID"),
+        os.environ.get("AWS_SECRET_ACCESS_KEY"),
+        os.environ.get("AWS_DEFAULT_REGION"),
+        os.environ.get("ARTIFACT_BUCKET")
+    ])
+    
+    if not use_s3:
+        logger.warning("S3 credentials not fully configured. Using local file system for artifacts.")
+        # Set artifact location to a local directory
+        mlflow.set_experiment("crop-recommendation")
+    else:
+        logger.info("Using S3 for MLflow artifacts")
+        mlflow.set_experiment("crop-recommendation")
+        
+        # Log environment variables for debugging (without showing actual values)
+        logger.info("AWS environment variables:")
+        logger.info(f"AWS_ACCESS_KEY_ID set: {'Yes' if os.environ.get('AWS_ACCESS_KEY_ID') else 'No'}")
+        logger.info(f"AWS_SECRET_ACCESS_KEY set: {'Yes' if os.environ.get('AWS_SECRET_ACCESS_KEY') else 'No'}")
+        logger.info(f"AWS_DEFAULT_REGION set: {'Yes' if os.environ.get('AWS_DEFAULT_REGION') else 'No'}")
+        logger.info(f"ARTIFACT_BUCKET set: {'Yes' if os.environ.get('ARTIFACT_BUCKET') else 'No'}")
+    
+    # Print artifact URI format for debugging
+    try:
+        with mlflow.start_run() as run:
+            logger.info(f"Run ID: {run.info.run_id}")
+            logger.info(f"Artifact URI: {mlflow.get_artifact_uri()}")
+            mlflow.end_run()
+    except Exception as e:
+        logger.warning(f"Error checking MLflow artifact URI: {e}")
+        logger.warning("Continuing with training despite MLflow issues")
 
     # Train and evaluate the model
-    metrics = train_and_evaluate()
-
-    logger.info("Model training pipeline completed successfully")
-
-    return metrics
+    try:
+        metrics = train_and_evaluate()
+        logger.info("Model training pipeline completed successfully")
+        return metrics
+    except Exception as e:
+        logger.error(f"Error in training pipeline: {e}")
+        raise
 
 
 if __name__ == "__main__":
